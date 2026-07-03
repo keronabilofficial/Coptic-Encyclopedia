@@ -1,0 +1,23 @@
+{
+  "theme_color": "#5c0612",
+  "background_color": "#f7f4eb",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "name": "الموسوعة الطقسية للألحان",
+  "short_name": "الألحان",
+  "description": "موسوعة المخطوطات والألحان الكنسية الشريفة تعمل بدون إنترنت",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2914/2914108.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2914/2914108.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

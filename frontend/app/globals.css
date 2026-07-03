@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* تعريف الألوان القبطية الأصيلة والتأثيرات السينمائية */
+:root {
+  --coptic-gold: #D4AF37;
+  --coptic-gold-glow: rgba(212, 175, 55, 0.2);
+  --coptic-crimson: #8B0000;
+  --dark-bg: #0a0a0c;
+}
+
+/* تنسيق الخلفية العامة والإضاءة السينمائية */
+body {
+  background-color: var(--dark-bg);
+  color: #e5e7eb;
+  /* إضاءة سينمائية دائرية في منتصف الشاشة من الأعلى */
+  background-image: radial-gradient(circle at 50% 0%, #2a1b08 0%, var(--dark-bg) 60%);
+  background-attachment: fixed;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ستايل العناوين الفخمة (Coptic Title) */
+.coptic-title {
+  color: var(--coptic-gold);
+  /* تأثير توهج سينمائي خفيف حول النص */
+  text-shadow: 0 2px 15px var(--coptic-gold-glow);
+  font-weight: 700;
+}
+
+/* ستايل اللوحات الزجاجية الراقية (Glassmorphism) للمجلات */
+.glass-panel {
+  background: rgba(18, 18, 20, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* إطار علوي قبطي مزخرف (Coptic Border) */
+.coptic-border-top {
+  border-top: 3px solid var(--coptic-gold);
+  position: relative;
+}
+
