@@ -10,7 +10,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // الرابط الديناميكي اللي بيقرأ من ملف الإعدادات .env.local
+  // الرابط الديناميكي اللي بيقرأ من ملف الإعدادات .env.local أو إعدادات Railway
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function HomePage() {
       });
   }, []);
 
-  // نظام تصفية وبحث متطور (حسب الاسم، الكلمات، أو المناسبة)
+  // نظام تصفية وبحث متطور مرن يتعامل مع اختلاف المسميات و "الـ" التعريف
   useEffect(() => {
     let result = hymns;
 
@@ -46,7 +46,19 @@ export default function HomePage() {
     }
 
     if (selectedSeason !== 'الكل') {
-      result = result.filter(hymn => hymn.season === selectedSeason);
+      result = result.filter(hymn => {
+        // قراءة الحقل المتاح من قاعدة البيانات (سواء season أو liturgy_type)
+        const hymnSeason = hymn.season || hymn.liturgy_type || '';
+        
+        // دالة لتنظيف الكلمة من "الـ" التعريف للتطابق الصحيح (مثال: سنوي = السنوي)
+        const cleanStr = (str) => str.toString().replace(/^ال/, '').trim();
+        
+        // التحقق من تطابق الاسم المباشر أو الـ slug الخاص بالموسم
+        const matchesName = cleanStr(hymnSeason) === cleanStr(selectedSeason);
+        const matchesSlug = hymn.season_slug === 'annual' && selectedSeason === 'السنوي';
+        
+        return matchesName || matchesSlug;
+      });
     }
 
     setFilteredHymns(result);
@@ -112,7 +124,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* فلاتر المواسم الكنسية */}
+            {/* fلاتر المواسم الكنسية */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold text-stone-700 mb-2">الموسم الطقسي الكنسي:</label>
               <div className="flex flex-wrap gap-2">
@@ -163,7 +175,7 @@ export default function HomePage() {
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-amber-600 text-lg group-hover:rotate-12 transition-transform">✥</span>
                     <span className="bg-amber-50 text-amber-800 text-xs px-3 py-1 rounded-lg font-extrabold border border-amber-100">
-                      {hymn.season || 'لحن طقسي'}
+                      {hymn.season || hymn.liturgy_type || 'لحن طقسي'}
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-stone-900 group-hover:text-amber-800 transition-colors mb-2 leading-snug">
@@ -184,7 +196,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* تذييل طقسي بسيط بدون أي روابط إدارة */}
+      {/* تذييل طقسي بسيط */}
       <footer className="text-center mt-24 text-xs text-stone-400 font-medium border-t border-stone-200 pt-6">
         <p>جميع الحقوق محفوظة للموسوعة الطقسية © {new Date().getFullYear()}</p>
       </footer>
