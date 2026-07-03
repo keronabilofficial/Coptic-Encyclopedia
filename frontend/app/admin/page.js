@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter.js';
 
 const ADMIN_SECRET_PASSWORD = "Abo@Filumina@6101996";
 
