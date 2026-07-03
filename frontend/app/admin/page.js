@@ -11,8 +11,9 @@ export default function AdminDashboard() {
   const [editingId, setEditingId] = useState(null);
   
   const initialForm = {
-    season_slug: '', title: '', ritual_notes: '', performance_style: '',
-    text_coptic: '', text_arabic_coptic: '', text_arabic: '', audio_url: ''
+    season_slug: '', title: '', liturgy_type: 'سنوي', ritual_notes: '',
+    performance_style: '', text_coptic: '', text_arabic_coptic: '',
+    text_arabic: '', audio_url: ''
   };
   const [form, setForm] = useState(initialForm);
 
@@ -38,14 +39,14 @@ export default function AdminDashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
     });
-    alert("تم الحفظ!");
+    alert("تم الحفظ بنجاح!");
     setEditingId(null);
     setForm(initialForm);
     loadData();
   };
 
   const deleteHymn = async (id) => {
-    if(!confirm("متأكد من الحذف؟")) return;
+    if(!confirm("هل أنت متأكد من الحذف؟")) return;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hymns/${id}`, { method: 'DELETE' });
     loadData();
   };
@@ -59,16 +60,16 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const inputStyle = "w-full p-3 border-2 border-gray-300 rounded-lg text-black placeholder-gray-500 focus:border-red-900 outline-none";
+  const inputStyle = "w-full p-3 border-2 border-gray-400 rounded-lg text-black bg-white focus:border-red-900 outline-none";
 
   return (
     <div className="p-6 bg-[#f7f4eb] min-h-screen" dir="rtl">
-      <h1 className="text-3xl font-bold mb-8 text-[#5c0612] border-b-2 border-[#d4af37] pb-4">لوحة التحكم</h1>
+      <h1 className="text-3xl font-bold mb-8 text-[#5c0612] border-b-2 border-[#d4af37] pb-4">لوحة تدوين الألحان</h1>
       
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl border-2 border-[#d4af37] shadow-lg mb-10 space-y-4">
         <h2 className="font-bold text-xl text-[#5c0612]">{editingId ? 'تعديل لحن' : 'إضافة لحن جديد'}</h2>
         <select className={inputStyle} onChange={(e) => setForm({...form, season_slug: e.target.value})} value={form.season_slug}>
-           <option>-- اختر الموسم --</option>
+           <option value="">-- اختر الموسم --</option>
            {seasons.map(s => <option key={s.id} value={s.slug}>{s.name}</option>)}
         </select>
         <input className={inputStyle} placeholder="اسم اللحن" value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} />
