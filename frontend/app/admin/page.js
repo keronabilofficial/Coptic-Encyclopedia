@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter.js';
+import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter';
 
 const ADMIN_SECRET_PASSWORD = "Abo@Filumina@6101996";
 
@@ -19,8 +19,36 @@ export default function AdminDashboard() {
   const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
-    if (sessionStorage.getItem('auth') === 'true') setIsAuthenticated(true);
-    loadData();
+    // جلب الألحان من الباكيند
+    fetch(`${API_URL}/api/hymns`)
+      .then((res) => {
+        if (!res.ok) throw new Error('فشل في جلب البيانات من السيرفر');
+        return res.json();
+      })
+      .then((data) => {
+        // === هنا بنستخدم الدالة اللي فوق عشان تقرأ وتنظف النص ===
+        const cleanedData = data.map(hymn => ({
+          ...hymn,
+          title: convertLegacyToUnicodeCoptic(hymn.title),
+          context: convertLegacyToUnicodeCoptic(hymn.context || hymn.description),
+          lyrics: convertLegacyToUnicodeCoptic(hymn.lyrics)
+        }));
+
+        setHymns(cleanedData);
+        setFilteredHymns(cleanedData);
+        // ======================================================
+
+        const dbSeasons = cleanedData.map(hymn => hymn.liturgy_type || hymn.season).filter(Boolean);
+        const uniqueSeasons = ['الكل', ...new Set(dbSeasons)];
+        
+        setSeasonsList(uniqueSeasons);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching hymns:", err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
 
   const loadData = async () => {

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 // استدعاء أداة التحويل السحرية من الفولدر اللي عملته
-import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter.js';
+import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter';
 
 export default function HomePage() {
   const [hymns, setHymns] = useState([]);

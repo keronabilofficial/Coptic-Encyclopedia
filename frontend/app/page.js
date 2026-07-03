@@ -17,20 +17,35 @@ export default function Home() {
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // جلب المواسم الطقسية من السيرفر فور تشغيل الصفحة
-  useEffect(() => {
-    fetch(`${API_URL}/api/seasons`)
+ useEffect(() => {
+    // جلب الألحان من الباكيند
+    fetch(`${API_URL}/api/hymns`)
       .then((res) => {
-        if (!res.ok) {
-          throw new Error('فشل في جلب المواسم الكنسية من قاعدة البيانات');
-        }
+        if (!res.ok) throw new Error('فشل في جلب البيانات من السيرفر');
         return res.json();
       })
       .then((data) => {
-        setSeasons(data);
+        // === هنا بنستخدم الدالة اللي فوق عشان تقرأ وتنظف النص ===
+        const cleanedData = data.map(hymn => ({
+          ...hymn,
+          title: convertLegacyToUnicodeCoptic(hymn.title),
+          context: convertLegacyToUnicodeCoptic(hymn.context || hymn.description),
+          lyrics: convertLegacyToUnicodeCoptic(hymn.lyrics)
+        }));
+
+        setHymns(cleanedData);
+        setFilteredHymns(cleanedData);
+        // ======================================================
+
+        const dbSeasons = cleanedData.map(hymn => hymn.liturgy_type || hymn.season).filter(Boolean);
+        const uniqueSeasons = ['الكل', ...new Set(dbSeasons)];
+        
+        setSeasonsList(uniqueSeasons);
         setLoading(false);
       })
       .catch((err) => {
-        console.error('خطأ في جلب البيانات:', err);
+        console.error("Error fetching hymns:", err);
+        setError(err.message);
         setLoading(false);
       });
   }, []);
