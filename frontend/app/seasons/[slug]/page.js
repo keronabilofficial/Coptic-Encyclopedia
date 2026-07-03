@@ -7,10 +7,13 @@ export default function HomePage() {
   const [filteredHymns, setFilteredHymns] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeason, setSelectedSeason] = useState('الكل');
+  
+  // قائمة المواسم هتبدأ بـ 'الكل' وهتتحدث تلقائياً من قاعدة البيانات
+  const [seasonsList, setSeasonsList] = useState(['الكل']);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // الرابط الديناميكي اللي بيقرأ من ملف الإعدادات .env.local أو إعدادات Railway
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -23,6 +26,13 @@ export default function HomePage() {
       .then((data) => {
         setHymns(data);
         setFilteredHymns(data);
+
+        // استخراج كل المواسم المكتوبة في الداتابيز بدون تكرار وبدون قيم فارغة
+        const dbSeasons = data.map(hymn => hymn.liturgy_type || hymn.season).filter(Boolean);
+        const uniqueSeasons = ['الكل', ...new Set(dbSeasons)];
+        
+        // تحديث أزرار التصنيفات بناءً على المواسم الحقيقية اللي إنت ضفتها
+        setSeasonsList(uniqueSeasons);
         setLoading(false);
       })
       .catch((err) => {
@@ -32,7 +42,7 @@ export default function HomePage() {
       });
   }, []);
 
-  // نظام تصفية وبحث متطور مرن يتعامل مع اختلاف المسميات و "الـ" التعريف
+  // نظام التصفية والبحث الذكي المتطابق مع بياناتك
   useEffect(() => {
     let result = hymns;
 
@@ -45,26 +55,16 @@ export default function HomePage() {
       );
     }
 
+    // التصفية بناءً على الموسم المختار بالتطابق الحرفي مع قيمتك في الداتابيز
     if (selectedSeason !== 'الكل') {
       result = result.filter(hymn => {
-        // قراءة الحقل المتاح من قاعدة البيانات (سواء season أو liturgy_type)
-        const hymnSeason = hymn.season || hymn.liturgy_type || '';
-        
-        // دالة لتنظيف الكلمة من "الـ" التعريف للتطابق الصحيح (مثال: سنوي = السنوي)
-        const cleanStr = (str) => str.toString().replace(/^ال/, '').trim();
-        
-        // التحقق من تطابق الاسم المباشر أو الـ slug الخاص بالموسم
-        const matchesName = cleanStr(hymnSeason) === cleanStr(selectedSeason);
-        const matchesSlug = hymn.season_slug === 'annual' && selectedSeason === 'السنوي';
-        
-        return matchesName || matchesSlug;
+        const hymnSeason = hymn.liturgy_type || hymn.season;
+        return hymnSeason === selectedSeason;
       });
     }
 
     setFilteredHymns(result);
   }, [searchTerm, selectedSeason, hymns]);
-
-  const seasons = ['الكل', 'السنوي', 'كياك', 'الصوم الكبير', 'البصخة المقدسة', 'الخمسين المقدسة', 'أعياد ومناسبات'];
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50" dir="rtl">
@@ -90,7 +90,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-stone-50 text-stone-800 pb-16" dir="rtl">
-      {/* خلفية الهيدر والزخرفة القبطية العريقة */}
+      {/* خلفية الهيدر والزخرفة */}
       <div className="bg-gradient-to-b from-amber-900 via-stone-900 to-stone-900 text-amber-100 py-16 px-4 text-center shadow-lg relative border-b-4 border-amber-600">
         <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:16px_16px]"></div>
         <div className="max-w-3xl mx-auto relative z-10">
@@ -124,11 +124,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* fلاتر المواسم الكنسية */}
+            {/* فلاتر المواسم الكنسية الديناميكية المجلوبة من داتابيز الخاصة بك */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold text-stone-700 mb-2">الموسم الطقسي الكنسي:</label>
               <div className="flex flex-wrap gap-2">
-                {seasons.map((season) => (
+                {seasonsList.map((season) => (
                   <button
                     key={season}
                     onClick={() => setSelectedSeason(season)}
@@ -161,7 +161,7 @@ export default function HomePage() {
           <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-stone-300 p-8">
             <div className="text-4xl mb-3 text-stone-400">☩</div>
             <p className="text-stone-500 font-bold text-lg mb-1">لم يتم العثور على ألحان تطابق بحثك حالياً.</p>
-            <p className="text-stone-400 text-sm">تأكد من كتابة الاسم بشكل صحيح أو جرب تصفح موسم آخر.</p>
+            <p className="text-stone-400 text-sm">تأكد من اختيار الموسم الصحيح أو جرب تصفح قسم آخر.</p>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -175,7 +175,7 @@ export default function HomePage() {
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-amber-600 text-lg group-hover:rotate-12 transition-transform">✥</span>
                     <span className="bg-amber-50 text-amber-800 text-xs px-3 py-1 rounded-lg font-extrabold border border-amber-100">
-                      {hymn.season || hymn.liturgy_type || 'لحن طقسي'}
+                      {hymn.liturgy_type || hymn.season || 'لحن طقسي'}
                     </span>
                   </div>
                   <h3 className="text-xl font-bold text-stone-900 group-hover:text-amber-800 transition-colors mb-2 leading-snug">
@@ -196,7 +196,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* تذييل طقسي بسيط */}
+      {/* تذييل */}
       <footer className="text-center mt-24 text-xs text-stone-400 font-medium border-t border-stone-200 pt-6">
         <p>جميع الحقوق محفوظة للموسوعة الطقسية © {new Date().getFullYear()}</p>
       </footer>
