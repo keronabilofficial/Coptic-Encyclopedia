@@ -35,11 +35,11 @@ export default function AdminDashboard() {
 
   const loadInitialData = async () => {
     try {
-      const resSeasons = await fetch('http://127.0.0.1:5000/api/seasons');
+      const resSeasons = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/seasons');
       const dataSeasons = await resSeasons.json();
       setSeasons(dataSeasons);
 
-      const resHymns = await fetch('http://127.0.0.1:5000/api/hymns');
+      const resHymns = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/seasons');
       const dataHymns = await resHymns.json();
       setHymns(dataHymns);
     } catch (err) {
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
     if (!seasonFormData.name || !seasonFormData.slug) return;
     setIsSeasonSubmitting(true);
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/seasons', {
+      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/seasons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(seasonFormData)
@@ -83,9 +83,9 @@ export default function AdminDashboard() {
     setIsHymnSubmitting(true);
     
     const url = editingHymnId 
-      ? `http://127.0.0.1:5000/api/hymns/${editingHymnId}`
-      : 'http://127.0.0.1:5000/api/hymns';
-    const method = editingHymnId ? 'PUT' : 'POST';
+      ? `${process.env.NEXT_PUBLIC_API_URL}/api/hymns/${editingHymnId}`
+      : `${process.env.NEXT_PUBLIC_API_URL}/api/hymns`;
+const method = editingHymnId ? 'PUT' : 'POST';
 
     try {
       const res = await fetch(url, {
@@ -124,15 +124,15 @@ export default function AdminDashboard() {
     window.scrollTo({ top: 400, behavior: 'smooth' });
   };
 
-  const deleteHymn = async (id) => {
-    if (!confirm('هل انت متأكد من حذف هذا اللحن؟')) return;
-    try {
-      await fetch(`http://127.0.0.1:5000/api/hymns/${id}`, { method: 'DELETE' });
-      setHymns(prev => prev.filter(h => h.id !== id));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+ const deleteHymn = async (id) => {
+  if (!confirm('هل انت متأكد من حذف هذا اللحن؟')) return;
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hymns/${id}`, { method: 'DELETE' });
+    setHymns(prev => prev.filter(h => h.id !== id));
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   if (!isAuthenticated) {
     return (
