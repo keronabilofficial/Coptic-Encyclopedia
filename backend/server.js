@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000;
 const corsOptions = {
   origin: [
     'http://localhost:3000', // عشان الموقع يفضل شغال معاك على جهازك وقت التطوير
-    'https://lavish-ambition-production-cefc.up.railway.app' // رابط الواجهة بتاعك على Railway
+    'https://coptic-encyclopedia-frondend-production.up.railway.app' // رابط الواجهة بتاعك على Railway
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
