@@ -7,7 +7,6 @@ const app = express();
 // إعداد المنفذ (Port) بشكل ديناميكي لـ Railway
 const PORT = process.env.PORT || 5000;
 
-
 const corsOptions = {
   origin: [
     'http://localhost:3000', // عشان الموقع يفضل شغال معاك على جهازك وقت التطوير
@@ -169,7 +168,5 @@ app.get('/api/search', async (req, res) => {
 
 // تشغيل السيرفر مرة واحدة فقط
 app.listen(PORT, '0.0.0.0', () => {
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
