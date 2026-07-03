@@ -1,3 +1,4 @@
+require('dotenv').config(); // <=== السطر المفقود اللي بيشغل الـ env بالكامل!
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -20,12 +21,14 @@ app.use(express.json());
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false } 
+  // حركة صايعة: لو شغال لوكال يقفل الـ SSL، لو أونلاين (Railway) يشغله تلقائياً
 });
 
 async function initDatabase() {
   try {
     console.log('⏳ جاري التحقق من هيكلة جداول قاعدة البيانات...');
+    
     await pool.query(`
       CREATE TABLE IF NOT EXISTS seasons (
         id SERIAL PRIMARY KEY,
@@ -34,7 +37,6 @@ async function initDatabase() {
       );
     `);
     
-    // إنشاء الجدول والتأكد من وجود عمود الأداء
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hymns (
         id SERIAL PRIMARY KEY,
@@ -51,12 +53,12 @@ async function initDatabase() {
       );
     `);
     
-    // إضافة العمود في حال كان الجدول موجوداً مسبقاً ولم يكن العمود موجوداً
     await pool.query(`ALTER TABLE hymns ADD COLUMN IF NOT EXISTS performance_style TEXT;`);
     
     console.log('✅ قاعدة البيانات مستقرة وجاهزة!');
   } catch (err) {
-    console.error('❌ خطأ أثناء تهيئة قاعدة البيانات:', err.message);
+    console.error('❌ خطأ أثناء تهيئة قاعدة البيانات:');
+    console.error(err); // بيطبع الخطأ كامل بالتفصيل في السطور اللي تحتها
   }
 }
 initDatabase();
@@ -73,17 +75,19 @@ app.post('/api/seasons', async (req, res) => {
 });
 
 app.get('/api/seasons', async (req, res) => {
-  const result = await pool.query('SELECT * FROM seasons ORDER BY id ASC');
-  res.json(result.rows);
+  try {
+    const result = await pool.query('SELECT * FROM seasons ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// جلب كل الألحان
 app.get('/api/hymns', async (req, res) => {
-  const result = await pool.query('SELECT * FROM hymns ORDER BY id DESC');
-  res.json(result.rows);
+  try {
+    const result = await pool.query('SELECT * FROM hymns ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// [إضافة] جلب لحن واحد محدد بواسطة الـ ID
 app.get('/api/hymns/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -120,8 +124,10 @@ app.put('/api/hymns/:id', async (req, res) => {
 });
 
 app.delete('/api/hymns/:id', async (req, res) => {
-  await pool.query('DELETE FROM hymns WHERE id = $1', [req.params.id]);
-  res.json({ message: "تم الحذف" });
+  try {
+    await pool.query('DELETE FROM hymns WHERE id = $1', [req.params.id]);
+    res.json({ message: "تم الحذف" });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on ${PORT}`));
