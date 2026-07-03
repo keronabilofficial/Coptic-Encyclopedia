@@ -77,9 +77,20 @@ app.get('/api/seasons', async (req, res) => {
   res.json(result.rows);
 });
 
+// جلب كل الألحان
 app.get('/api/hymns', async (req, res) => {
   const result = await pool.query('SELECT * FROM hymns ORDER BY id DESC');
   res.json(result.rows);
+});
+
+// [إضافة] جلب لحن واحد محدد بواسطة الـ ID
+app.get('/api/hymns/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('SELECT * FROM hymns WHERE id = $1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "اللحن غير موجود" });
+    res.json(result.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/hymns', async (req, res) => {
