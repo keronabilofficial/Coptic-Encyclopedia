@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter';
+import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter.js';
 
 export default function Home() {
   const [seasons, setSeasons] = useState([]);
