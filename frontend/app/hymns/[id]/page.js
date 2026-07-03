@@ -1,4 +1,5 @@
 'use client';
+import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
