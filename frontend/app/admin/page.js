@@ -35,11 +35,11 @@ export default function AdminDashboard() {
 
   const loadInitialData = async () => {
     try {
-      const resSeasons = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/seasons');
+      const resSeasons = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/seasons`);
       const dataSeasons = await resSeasons.json();
       setSeasons(dataSeasons);
 
-      const resHymns = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/seasons');
+      const resHymns = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hymns`);
       const dataHymns = await resHymns.json();
       setHymns(dataHymns);
     } catch (err) {
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
     if (!seasonFormData.name || !seasonFormData.slug) return;
     setIsSeasonSubmitting(true);
     try {
-      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/seasons', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/seasons`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(seasonFormData)
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
     const url = editingHymnId 
       ? `${process.env.NEXT_PUBLIC_API_URL}/api/hymns/${editingHymnId}`
       : `${process.env.NEXT_PUBLIC_API_URL}/api/hymns`;
-const method = editingHymnId ? 'PUT' : 'POST';
+    const method = editingHymnId ? 'PUT' : 'POST';
 
     try {
       const res = await fetch(url, {
@@ -124,15 +124,15 @@ const method = editingHymnId ? 'PUT' : 'POST';
     window.scrollTo({ top: 400, behavior: 'smooth' });
   };
 
- const deleteHymn = async (id) => {
-  if (!confirm('هل انت متأكد من حذف هذا اللحن؟')) return;
-  try {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hymns/${id}`, { method: 'DELETE' });
-    setHymns(prev => prev.filter(h => h.id !== id));
-  } catch (err) {
-    console.error(err);
-  }
-};
+  const deleteHymn = async (id) => {
+    if (!confirm('هل انت متأكد من حذف هذا اللحن؟')) return;
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/hymns/${id}`, { method: 'DELETE' });
+      setHymns(prev => prev.filter(h => h.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -140,9 +140,7 @@ const method = editingHymnId ? 'PUT' : 'POST';
         <div className="bg-[#f7f4eb] border-2 border-[#d4af37] rounded-2xl p-8 max-w-md w-full text-center">
           <h2 className="text-xl font-bold text-[#5c0612] mb-4">منطقة طقسية مغلقة</h2>
           <form onSubmit={handleLoginSubmit} className="space-y-4">
-            <input type="password" placeholder="أدخل كلمة المرور..." value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
-              className="w-full text-center rounded-xl px-4 py-3 border" />
+            <input placeholder="أدخل كلمة المرور..." type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full text-center rounded-xl px-4 py-3 border" />
             {authError && <p className="text-xs text-red-600 font-bold">{authError}</p>}
             <button type="submit" className="w-full bg-[#5c0612] text-[#f2cc8f] font-bold py-3 rounded-xl">دخول ➔</button>
           </form>
@@ -158,11 +156,12 @@ const method = editingHymnId ? 'PUT' : 'POST';
       </header>
 
       <main className="container mx-auto px-4 py-10 max-w-4xl space-y-10">
+        
         <section className="bg-white border rounded-2xl p-6 shadow-sm">
           <h2 className="font-bold mb-4">✥ اضافة موسم جديد</h2>
           <form onSubmit={handleSeasonSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input placeholder="اسم الموسم" value={seasonFormData.name} onChange={(e) => setSeasonFormData({...seasonFormData, name: e.target.value})} className="border rounded-xl px-3 py-2"/>
-            <input placeholder="الرمز (slug)" value={seasonFormData.slug} onChange={(e) => setSeasonFormData({...seasonFormData, slug: e.target.value})} className="border rounded-xl px-3 py-2"/>
+            <input placeholder="اسم الموسم" value={seasonFormData.name} onChange={(e) => setSeasonFormData({...seasonFormData, name: e.target.value})} className="border rounded-xl px-3 py-2" />
+            <input placeholder="الرمز (slug)" value={seasonFormData.slug} onChange={(e) => setSeasonFormData({...seasonFormData, slug: e.target.value})} className="border rounded-xl px-3 py-2" />
             <button type="submit" className="bg-[#5c0612] text-[#f2cc8f] rounded-xl">{isSeasonSubmitting ? 'جاري...' : 'انشاء'}</button>
           </form>
         </section>
@@ -174,30 +173,36 @@ const method = editingHymnId ? 'PUT' : 'POST';
               <option value="">-- اختر الموسم --</option>
               {seasons.map(s => <option key={s.id} value={s.slug}>{s.name}</option>)}
             </select>
-            <input placeholder="اسم اللحن" value={hymnFormData.title} onChange={(e) => setHymnFormData({...hymnFormData, title: e.target.value})} className="w-full border rounded-xl px-3 py-2"/>
-            <input placeholder="رابط الملف الصوتي" value={hymnFormData.audio_url} onChange={(e) => setHymnFormData({...hymnFormData, audio_url: e.target.value})} className="w-full border rounded-xl px-3 py-2"/>
-            <textarea placeholder="النص القبطي" value={hymnFormData.text_coptic} onChange={(e) => setHymnFormData({...hymnFormData, text_coptic: e.target.value})} className="w-full border rounded-xl px-3 py-2"></textarea>
-            <textarea placeholder="الترجمة العربية" value={hymnFormData.text_arabic} onChange={(e) => setHymnFormData({...hymnFormData, text_arabic: e.target.value})} className="w-full border rounded-xl px-3 py-2"></textarea>
+            <input placeholder="اسم اللحن" value={hymnFormData.title} onChange={(e) => setHymnFormData({...hymnFormData, title: e.target.value})} className="w-full border rounded-xl px-3 py-2" />
+            <input placeholder="رابط الملف الصوتي" value={hymnFormData.audio_url} onChange={(e) => setHymnFormData({...hymnFormData, audio_url: e.target.value})} className="w-full border rounded-xl px-3 py-2" />
+            <textarea placeholder="النص القبطي" value={hymnFormData.text_coptic} onChange={(e) => setHymnFormData({...hymnFormData, text_coptic: e.target.value})} className="w-full border rounded-xl px-3 py-2" rows={3} />
+            <textarea placeholder="الترجمة العربية" value={hymnFormData.text_arabic} onChange={(e) => setHymnFormData({...hymnFormData, text_arabic: e.target.value})} className="w-full border rounded-xl px-3 py-2" rows={3} />
             <button type="submit" className="w-full bg-amber-700 text-white py-3 rounded-xl">{editingHymnId ? 'حفظ التعديلات' : 'إضافة اللحن'}</button>
           </form>
         </section>
 
         <section className="bg-white border rounded-2xl p-6">
           <table className="w-full text-right border-collapse">
-            <thead><tr className="bg-gray-100"><th className="p-2 border">اسم اللحن</th><th className="p-2 border">التحكم</th></tr></thead>
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 border">اسم اللحن</th>
+                <th className="p-2 border">التحكم</th>
+              </tr>
+            </thead>
             <tbody>
               {hymns.map(h => (
                 <tr key={h.id}>
                   <td className="p-2 border">{h.title}</td>
                   <td className="p-2 border space-x-2">
                     <button onClick={() => startEditHymn(h)} className="bg-blue-600 text-white px-2 py-1 rounded">تعديل</button>
-                    <button onClick={() => deleteHymn(h.id)} className="bg-red-700 text-white px-2 py-1 rounded">حذف</button>
+                    <button onClick={() => deleteHymn(h.id)} className="bg-red-700 text-white px-2 py-1 rounded mr-2">حذف</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </section>
+
       </main>
     </div>
   );
