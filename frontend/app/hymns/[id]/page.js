@@ -1,120 +1,184 @@
 'use client';
-import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+// استدعاء أداة التحويل السحرية من الفولدر اللي عملته
+import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter';
 
-export default function HymnDetailsPage() {
-  const { id } = useParams();
-  const [hymn, setHymn] = useState(null);
+export default function HomePage() {
+  const [hymns, setHymns] = useState([]);
+  const [filteredHymns, setFilteredHymns] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSeason, setSelectedSeason] = useState('الكل');
+  const [seasonsList, setSeasonsList] = useState(['الكل']);
   const [loading, setLoading] = useState(true);
-  
-  // حالات التحكم التفاعلية
-  const [fontSize, setFontSize] = useState(18); 
-  const [isDarkMode, setIsDarkMode] = useState(false); 
+  const [error, setError] = useState(null);
 
-  // رابط الـ API الديناميكي
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
-    if (!id) return;
-    
-    fetch(`${API_URL}/api/hymns/${id}`)
-      .then(res => res.json())
-      .then(data => { setHymn(data); setLoading(false); })
-      .catch(err => { console.error(err); setLoading(false); });
-  }, [id, API_URL]);
+    fetch(`${API_URL}/api/hymns`)
+      .then((res) => {
+        if (!res.ok) throw new Error('فشل في جلب البيانات من السيرفر');
+        return res.json();
+      })
+      .then((data) => {
+        // اعتراض البيانات وتحويلها بالكامل لـ Unicode سليم قبل حفظها في الـ State
+        const cleanedData = data.map(hymn => ({
+          ...hymn,
+          title: convertLegacyToUnicodeCoptic(hymn.title),
+          context: convertLegacyToUnicodeCoptic(hymn.context || hymn.description),
+          lyrics: convertLegacyToUnicodeCoptic(hymn.lyrics)
+        }));
 
-  if (loading) return <div className="min-h-screen bg-[#f7f4eb] flex items-center justify-center text-[#8c7463]">جاري فك رموز المخطوطة الشريفة...</div>;
-  if (!hymn) return <div className="min-h-screen bg-[#f7f4eb] flex items-center justify-center text-red-800">اللحن غير موجود</div>;
+        setHymns(cleanedData);
+        setFilteredHymns(cleanedData);
 
-  return (
-    <div className={`min-h-screen flex flex-col justify-between transition-colors duration-300 ${isDarkMode ? 'bg-[#121212] text-[#e0e0e0]' : 'bg-[#f7f4eb] text-[#3d2a1d]'}`} dir="rtl">
-      
-      {/* هيدر الصفحة */}
-      <header className={`py-6 text-center border-b-4 relative px-4 ${isDarkMode ? 'bg-[#1a1a1a] border-[#8c6d1d] text-[#f2cc8f]' : 'bg-[#5c0612] text-[#f2cc8f] border-[#d4af37]'}`}>
-        <button onClick={() => window.history.back()} className="absolute right-4 top-5 bg-black/30 text-white px-3 py-1 rounded-lg text-xs">رجوع</button>
-        <span className="text-xs block mb-1">✥ {hymn.liturgy_type || 'لحن طقسي'} ✥</span>
-        <h1 className="text-xl md:text-2xl font-bold font-serif">{hymn.title}</h1>
-      </header>
-
-      {/* شريط أدوات التحكم التفاعلي العائم */}
-      <div className={`sticky top-0 z-50 px-4 py-2 flex justify-between items-center border-b shadow-sm ${isDarkMode ? 'bg-[#222] border-neutral-800' : 'bg-[#fcfaf5] border-[#e8e2d5]'}`}>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-gray-500">حجم نصوص المخطوطة:</span>
-          <button onClick={() => setFontSize(prev => Math.min(prev + 2, 32))} className="bg-gray-200 text-black font-bold px-3 py-1 rounded text-sm hover:bg-gray-300">A+</button>
-          <button onClick={() => setFontSize(prev => Math.max(prev - 2, 14))} className="bg-gray-200 text-black font-bold px-3 py-1 rounded text-sm hover:bg-gray-300">A-</button>
-          <span className="text-xs font-mono px-1">({fontSize}px)</span>
-        </div>
+        const dbSeasons = cleanedData.map(hymn => hymn.liturgy_type || hymn.season).filter(Boolean);
+        const uniqueSeasons = ['الكل', ...new Set(dbSeasons)];
         
-        <button 
-          onClick={() => setIsDarkMode(!isDarkMode)} 
-          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${isDarkMode ? 'bg-amber-400 text-black' : 'bg-neutral-900 text-white'}`}
-        >
-          {isDarkMode ? '☀️ الوضع النهاري' : '🌙 الوضع الليلي (تعتيم الكنيسة)'}
+        setSeasonsList(uniqueSeasons);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching hymns:", err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    let result = hymns;
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(hymn => 
+        hymn.title?.toLowerCase().includes(term) || 
+        hymn.context?.toLowerCase().includes(term) ||
+        hymn.lyrics?.toLowerCase().includes(term)
+      );
+    }
+
+    if (selectedSeason !== 'الكل') {
+      result = result.filter(hymn => {
+        const hymnSeason = hymn.liturgy_type || hymn.season;
+        return hymnSeason === selectedSeason;
+      });
+    }
+
+    setFilteredHymns(result);
+  }, [searchTerm, selectedSeason, hymns]);
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50" dir="rtl">
+      <div className="text-3xl mb-4 text-amber-700 animate-spin">✥</div>
+      <div className="text-xl font-bold text-stone-700 animate-pulse">جاري تحميل الموسوعة الطقسية للألحان...</div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50 p-4" dir="rtl">
+      <div className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-xl max-w-md text-center shadow-sm">
+        <p className="text-xl font-bold mb-2">عذراً، حدث خطأ أثناء الاتصال بالقاعدة</p>
+        <p className="text-sm text-red-600 mb-4">{error}</p>
+        <button onClick={() => window.location.reload()} className="bg-amber-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-amber-800 transition-colors">
+          إعادة المحاولة
         </button>
       </div>
-
-      {/* المحتوى والمخطوطة */}
-      <main className="container mx-auto px-4 py-6 max-w-5xl flex-grow space-y-6">
-        
-        {/* مشغل الصوت والطقس */}
-        <div className={`border-2 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-center ${isDarkMode ? 'bg-[#1e1e1e] border-neutral-800' : 'bg-[#faf8f5] border-[#e8e2d5]'}`}>
-          <div className="md:col-span-2 space-y-1">
-            <span className="block text-xs font-bold">التسجيل التعليمي الصوتي المعتمد:</span>
-           {hymn.audio_url ? (
-  <audio controls className="w-full accent-[#5c0612]" key={hymn.audio_url}>
-    <source 
-      src={hymn.audio_url} 
-      type="audio/webm" 
-    />
-    متصفحك لا يدعم تشغيل هذا الملف الصوتي.
-  </audio>
-) : (
-  <div className="text-xs text-gray-500 text-center py-2 border border-dashed rounded-xl">
-    🔒 لم يتم ربط ملف صوتي تعليمي لهذا اللحن بعد.
-  </div>
-)}
-          </div>
-          <div className={`p-3 rounded-xl text-xs leading-relaxed ${isDarkMode ? 'bg-neutral-900 text-gray-400' : 'bg-white text-[#735640]'}`}>
-            <span className="block font-bold text-amber-500 mb-0.5">✥ عوائد الطقس والأداء:</span>
-            {hymn.ritual_notes || 'لا توجد توجيهات خاصة، يرتل حسب النظام السنوي المعتاد.'}
-          </div>
-        </div>
-
-        {/* المخطوطة الثلاثية المتجاوبة */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ fontSize: `${fontSize}px` }}>
-          
-          {/* العمود الأول: النص القبطي */}
-          <div className={`border-2 rounded-2xl p-5 shadow-sm text-center transition-colors ${isDarkMode ? 'bg-[#1e1e1e] border-neutral-800 text-blue-300' : 'bg-white border-[#e8e2d5] text-indigo-950'}`}>
-            <div className="text-xs font-bold mb-3 border-b pb-1 opacity-60">COPTIC TEXT</div>
-            <p className="font-serif leading-loose text-right whitespace-pre-wrap select-all" style={{ wordSpacing: '2px' }} dir="ltr">
-              {hymn.text_coptic || '---'}
-            </p>
-          </div>
-
-          {/* العمود الثاني: القبطي المعرب */}
-          <div className={`border-2 rounded-2xl p-5 shadow-sm text-center transition-colors ${isDarkMode ? 'bg-[#1e1e1e] border-neutral-800 text-yellow-200' : 'bg-white border-[#e8e2d5] text-[#3d2a1d]'}`}>
-            <div className="text-xs font-bold mb-3 border-b pb-1 opacity-60">النطق القبطي معربا</div>
-            <p className="font-sans leading-loose text-center whitespace-pre-wrap">
-              {hymn.text_arabic_coptic || '---'}
-            </p>
-          </div>
-
-          {/* العمود الثالث: الترجمة العربية */}
-          <div className={`border-2 rounded-2xl p-5 shadow-sm text-center transition-colors ${isDarkMode ? 'bg-[#1e1e1e] border-neutral-800 text-red-300' : 'bg-white border-[#e8e2d5] text-[#5c0612]'}`}>
-            <div className="text-xs font-bold mb-3 border-b pb-1 opacity-60">التفسير والترجمة العربية</div>
-            <p className="font-serif leading-loose text-right whitespace-pre-wrap">
-              {hymn.text_arabic || '---'}
-            </p>
-          </div>
-
-        </div>
-      </main>
-
-      <footer className={`py-4 text-center text-xs border-t-2 ${isDarkMode ? 'bg-[#1a1a1a] border-[#8c6d1d] text-gray-500' : 'bg-[#240105] border-[#d4af37] text-[#caa673]'}`}>
-        <p>تطوير وتوثيق كيرلس نبيل </p>
-      </footer>
     </div>
+  );
+
+  return (
+    <main className="min-h-screen bg-stone-50 text-stone-800 pb-16" dir="rtl">
+      <div className="bg-gradient-to-b from-amber-900 via-stone-900 to-stone-900 text-amber-100 py-16 px-4 text-center shadow-lg relative border-b-4 border-amber-600">
+        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div className="max-w-3xl mx-auto relative z-10">
+          <div className="text-4xl md:text-5xl mb-4 text-amber-500 font-serif tracking-widest">✥ ☩ ✥</div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-wide mb-3 drop-shadow">موسوعة الألحان القبطية الطقسية</h1>
+          <p className="text-stone-300 text-base md:text-lg max-w-xl mx-auto font-medium leading-relaxed">
+            المرجع التعليمي الكنسي الشامل لنصوص، معاني وترتيب الصلبان والألحان الطقسية.
+          </p>
+        </div>
+      </div>
+
+      <section className="max-w-5xl mx-auto -mt-8 px-4 relative z-20">
+        <div className="bg-white rounded-2xl shadow-xl border border-stone-200 p-6 md:p-8">
+          <div className="grid gap-6 md:grid-cols-3 items-end">
+            <div className="md:col-span-1">
+              <label className="block text-sm font-bold text-stone-700 mb-2">البحث الذكي عن لحن:</label>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="اسم اللحن، كلمات من النص..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2.5 pr-10 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600 bg-stone-50 text-stone-900 font-medium"
+                />
+                <span className="absolute left-3 top-3 text-stone-400">🔍</span>
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-bold text-stone-700 mb-2">الموسم الطقسي الكنسي:</label>
+              <div className="flex flex-wrap gap-2">
+                {seasonsList.map((season) => (
+                  <button
+                    key={season}
+                    onClick={() => setSelectedSeason(season)}
+                    className={`px-4 py-2 text-sm font-bold rounded-xl transition-all duration-200 ${
+                      selectedSeason === season 
+                        ? 'bg-amber-800 text-white shadow-md transform scale-105' 
+                        : 'bg-stone-100 text-stone-600 hover:bg-amber-50 hover:text-amber-900 border border-stone-200'
+                    }`}
+                  >
+                    {season}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto mt-12 px-4">
+        <div className="flex items-center justify-between mb-6 border-b border-stone-200 pb-3">
+          <h2 className="text-xl font-extrabold text-stone-800 flex items-center gap-2">
+            <span className="text-amber-700">✥</span> الألحان المدرجة ({filteredHymns.length})
+          </h2>
+        </div>
+
+        {filteredHymns.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-stone-300 p-8">
+            <p className="text-stone-500 font-bold text-lg">لم يتم العثور على ألحان.</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredHymns.map((hymn) => (
+              <Link 
+                href={`/hymns/${hymn.id || hymn._id}`} 
+                key={hymn.id || hymn._id} 
+                className="group bg-white rounded-2xl p-6 shadow-sm border border-stone-200 hover:border-amber-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-amber-600 text-lg">✥</span>
+                    <span className="bg-amber-50 text-amber-800 text-xs px-3 py-1 rounded-lg font-extrabold">
+                      {hymn.liturgy_type || hymn.season || 'لحن طقسي'}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold text-stone-900 mb-2 whitespace-pre-line">{hymn.title}</h3>
+                  <p className="text-stone-600 text-sm leading-relaxed line-clamp-4 font-medium whitespace-pre-line">
+                    {hymn.context}
+                  </p>
+                </div>
+                <div className="mt-6 border-t border-stone-100 pt-3 flex items-center justify-between text-amber-700 text-xs font-extrabold">
+                  <span>عرض النص بالكامل</span>
+                  <span>←</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }

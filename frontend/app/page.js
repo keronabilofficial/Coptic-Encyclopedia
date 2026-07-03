@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { convertLegacyToUnicodeCoptic } from '@/utils/copticConverter';
 
 export default function Home() {
   const [seasons, setSeasons] = useState([]);
@@ -11,7 +12,8 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // الرابط المباشر الصريح للباكيند أونلاين على Vercel
+  // الرابط المباشر الصريح للباكيند أونلاين على Railway
+  
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // جلب المواسم الطقسية من السيرفر فور تشغيل الصفحة
